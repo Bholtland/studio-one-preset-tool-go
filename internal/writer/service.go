@@ -5,11 +5,14 @@ import (
 	"bholtland/studio-one-preset-tool-go/internal/reader"
 	"context"
 	"encoding/xml"
+	"errors"
 	"fmt"
 	"github.com/saracen/fastzip"
 	"io"
 	"os"
 	"path/filepath"
+	"runtime"
+	"sync"
 )
 
 type metaAttribute struct {
@@ -46,9 +49,44 @@ func NewService(cfg *config.Config, ctx context.Context) *Service {
 }
 
 func (s *Service) CreatePresets(presetMap *reader.PresetMap) error {
-	// Make concurrent
+	// Create a buffered channel for errors
+	errs := make(chan error, runtime.NumCPU())
+
+	// Create a WaitGroup
+	var wg sync.WaitGroup
+
+	if presetMap == nil {
+		return errors.New("PresetMap is nil")
+	}
+
+	// Loop over presets
 	for _, preset := range *presetMap {
-		if err := s.createPreset(preset); err != nil {
+		// Increment the WaitGroup counter
+		wg.Add(1)
+
+		// Start a new goroutine
+		go func(p reader.PresetMapEntry) {
+			err := s.createPreset(&p)
+
+			// If there was an error, send it on the errs channel
+			if err != nil {
+				errs <- err
+			}
+
+			// Decrement the WaitGroup counter
+			wg.Done()
+		}(*preset)
+	}
+
+	// Wait for all goroutines to finish
+	wg.Wait()
+
+	// Close the errs channel
+	close(errs)
+
+	// Check if there were any errors
+	for err := range errs {
+		if err != nil {
 			return err
 		}
 	}
