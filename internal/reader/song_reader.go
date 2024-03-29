@@ -1,11 +1,13 @@
 package reader
 
 import (
+	"bholtland/studio-one-preset-tool-go/internal/config"
 	"encoding/xml"
 	"fmt"
 	"io"
 	"log/slog"
 	"os"
+	"path"
 )
 
 type SongXML struct {
@@ -47,10 +49,13 @@ type FolderMapEntry struct {
 }
 
 type SongReader struct {
+	cfg *config.Config
 }
 
-func NewSongReader() *SongReader {
-	return &SongReader{}
+func NewSongReader(cfg *config.Config) *SongReader {
+	return &SongReader{
+		cfg: cfg,
+	}
 }
 
 func (s *SongReader) GetMap() (SongMap, FolderMap, error) {
@@ -111,7 +116,7 @@ func (s *SongReader) buildFolderMap(song *SongXML) map[string]*FolderMapEntry {
 }
 
 func (sr *SongReader) getXML() (*SongXML, error) {
-	file, err := os.Open("song.xml")
+	file, err := os.Open(path.Join(sr.cfg.Temp.SongContentsPath, "Song", "song.xml"))
 	if err != nil {
 		return nil, fmt.Errorf("Error opening XML file: %w", err)
 	}

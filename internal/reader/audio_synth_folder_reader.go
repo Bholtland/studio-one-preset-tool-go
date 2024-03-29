@@ -1,11 +1,13 @@
 package reader
 
 import (
+	"bholtland/studio-one-preset-tool-go/internal/config"
 	"encoding/xml"
 	"fmt"
 	"io"
 	"log/slog"
 	"os"
+	"path"
 	"regexp"
 )
 
@@ -58,10 +60,13 @@ type AudioSynthFolderMapEntry struct {
 }
 
 type AudioSynthFolderReader struct {
+	cfg *config.Config
 }
 
-func NewAudioSynthFolderReader() *AudioSynthFolderReader {
-	return &AudioSynthFolderReader{}
+func NewAudioSynthFolderReader(cfg *config.Config) *AudioSynthFolderReader {
+	return &AudioSynthFolderReader{
+		cfg: cfg,
+	}
 }
 
 func (s *AudioSynthFolderReader) GetMap() (AudioSynthFolderMap, error) {
@@ -185,7 +190,7 @@ func (s *AudioSynthFolderReader) buildAudioSynthFolderMap(audioSynthFolder *Audi
 }
 
 func (s *AudioSynthFolderReader) getXML() (*AudioSynthFolderXML, error) {
-	file, err := os.Open("audiosynthfolder.xml")
+	file, err := os.Open(path.Join(s.cfg.Temp.SongContentsPath, "Devices", "audiosynthfolder.xml"))
 	if err != nil {
 		return nil, fmt.Errorf("Error opening XML file: %w", err)
 	}

@@ -1,6 +1,9 @@
 package reader
 
-import "log/slog"
+import (
+	"bholtland/studio-one-preset-tool-go/internal/config"
+	"log/slog"
+)
 
 type PresetMap map[string]*PresetMapEntry
 
@@ -22,13 +25,15 @@ type Service struct {
 	audioSynthFolderReader *AudioSynthFolderReader
 	musicTrackDeviceReader *MusicTrackDeviceReader
 	songReader             *SongReader
+	cfg                    *config.Config
 }
 
-func NewService() *Service {
+func NewService(cfg *config.Config) *Service {
 	return &Service{
-		audioSynthFolderReader: NewAudioSynthFolderReader(),
-		musicTrackDeviceReader: NewMusicTrackDeviceReader(),
-		songReader:             NewSongReader(),
+		audioSynthFolderReader: NewAudioSynthFolderReader(cfg),
+		musicTrackDeviceReader: NewMusicTrackDeviceReader(cfg),
+		songReader:             NewSongReader(cfg),
+		cfg:                    cfg,
 	}
 }
 
@@ -76,6 +81,7 @@ func (s *Service) GetPresets() (PresetMap, error) {
 			FileName:          audioSynthFolderEntry.PresetFileName,
 			Name:              songEntry.Name,
 			Path:              path,
+			SongID:            musicTrackDeviceEntry.SongID,
 		}
 		presetMap[audioSynthFolderEntry.MusicTrackDeviceID] = preset
 	}

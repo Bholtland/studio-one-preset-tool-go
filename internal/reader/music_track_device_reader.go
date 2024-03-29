@@ -1,11 +1,13 @@
 package reader
 
 import (
+	"bholtland/studio-one-preset-tool-go/internal/config"
 	"encoding/xml"
 	"fmt"
 	"io"
 	"log/slog"
 	"os"
+	"path"
 	"regexp"
 )
 
@@ -35,10 +37,13 @@ type MusicTrackDeviceMapEntry struct {
 }
 
 type MusicTrackDeviceReader struct {
+	cfg *config.Config
 }
 
-func NewMusicTrackDeviceReader() *MusicTrackDeviceReader {
-	return &MusicTrackDeviceReader{}
+func NewMusicTrackDeviceReader(cfg *config.Config) *MusicTrackDeviceReader {
+	return &MusicTrackDeviceReader{
+		cfg: cfg,
+	}
 }
 
 func (s *MusicTrackDeviceReader) GetMap() (MusicTrackDeviceMap, error) {
@@ -107,7 +112,7 @@ func (s *MusicTrackDeviceReader) BuildMusicTrackDeviceMap(musicTrackDevice *Musi
 }
 
 func (s *MusicTrackDeviceReader) getXML() (*MusicTrackDeviceXML, error) {
-	file, err := os.Open("musictrackdevice.xml")
+	file, err := os.Open(path.Join(s.cfg.Temp.SongContentsPath, "Devices", "musictrackdevice.xml"))
 	if err != nil {
 		return nil, fmt.Errorf("Error opening XML file: %w", err)
 	}
