@@ -2,11 +2,11 @@ package main
 
 import (
 	"bholtland/studio-one-preset-tool-go/internal/config"
+	"bholtland/studio-one-preset-tool-go/internal/file"
 	"bholtland/studio-one-preset-tool-go/internal/reader"
 	"bholtland/studio-one-preset-tool-go/internal/writer"
 	"context"
 	"fmt"
-	"github.com/saracen/fastzip"
 	"github.com/urfave/cli"
 	"log/slog"
 	"os"
@@ -55,16 +55,16 @@ func run(cliCtx *cli.Context, cfg *config.Config) error {
 	ctx := context.Background()
 	logger := slog.With("")
 
-	if err := cleanup(cfg); err != nil {
+	if err := os.RemoveAll(cfg.Temp.Path); err != nil {
 		return fmt.Errorf("Error cleaning up: %s", err)
 	}
 
-	defer cleanup(cfg)
+	defer os.RemoveAll(cfg.Temp.Path)
 
 	readerSvc := reader.NewService(cfg)
 	writerSvc := writer.NewService(cfg, ctx, logger)
 
-	err := extractProject(ctx, cfg)
+	err := file.Extract(ctx, cfg.In.Full, cfg.Temp.SongContentsPath)
 	if err != nil {
 		return fmt.Errorf("Error extracting project: %s", err)
 	}
@@ -82,26 +82,4 @@ func run(cliCtx *cli.Context, cfg *config.Config) error {
 	logger.Info(fmt.Sprintf("Finished in %s seconds", time.Since(start)))
 
 	return nil
-}
-
-func cleanup(cfg *config.Config) error {
-	if err := os.RemoveAll(cfg.Temp.Path); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func extractProject(ctx context.Context, cfg *config.Config) error {
-	if err := os.MkdirAll(cfg.Temp.SongContentsPath, os.ModeTemporary); err != nil {
-		return err
-	}
-
-	extractor, err := fastzip.NewExtractor(cfg.In.Full, cfg.Temp.SongContentsPath)
-	if err != nil {
-		return err
-	}
-	defer extractor.Close()
-
-	return extractor.Extract(ctx)
 }

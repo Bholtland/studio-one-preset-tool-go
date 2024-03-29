@@ -2,11 +2,9 @@ package reader
 
 import (
 	"bholtland/studio-one-preset-tool-go/internal/config"
+	"bholtland/studio-one-preset-tool-go/internal/file"
 	"encoding/xml"
-	"fmt"
-	"io"
 	"log/slog"
-	"os"
 	"path"
 )
 
@@ -59,7 +57,7 @@ func NewSongReader(cfg *config.Config) *SongReader {
 }
 
 func (s *SongReader) GetMap() (SongMap, FolderMap, error) {
-	xml, err := s.getXML()
+	xml, err := file.ReadXML[SongXML](path.Join(s.cfg.Temp.SongContentsPath, "Song", "song.xml"))
 	if err != nil {
 		return nil, nil, err
 	}
@@ -113,28 +111,4 @@ func (s *SongReader) buildFolderMap(song *SongXML) map[string]*FolderMapEntry {
 		}
 	}
 	return presetsMap
-}
-
-func (sr *SongReader) getXML() (*SongXML, error) {
-	file, err := os.Open(path.Join(sr.cfg.Temp.SongContentsPath, "Song", "song.xml"))
-	if err != nil {
-		return nil, fmt.Errorf("Error opening XML file: %w", err)
-	}
-	defer file.Close()
-
-	// Read the entire XML content
-	rawXML, err := io.ReadAll(file)
-	if err != nil {
-		return nil, fmt.Errorf("Error reading XML file: %w", err)
-	}
-
-	var unmarshalledXML *SongXML
-
-	// Unmarshal the XML content into the Person struct
-	err = xml.Unmarshal(rawXML, &unmarshalledXML)
-	if err != nil {
-		return nil, fmt.Errorf("Error unmarshalling XML: %w", err)
-	}
-
-	return unmarshalledXML, nil
 }
